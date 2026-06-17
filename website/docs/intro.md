@@ -73,6 +73,18 @@ This brings up eight containers: the FastAPI backend, the React/Vite frontend, P
 
 Once everything is running, open **http://localhost:5173** for the dashboard.
 
+### Default Users
+
+Three accounts are pre-configured for different access levels:
+
+| Role | Username | Password |
+| ---- | -------- | -------- |
+| Admin | admin | pqcadmin |
+| Developer | dev | pqcdev |
+| Reader | reader | pqcreader |
+
+Change these credentials after your first login.
+
 ### Run Your First Scan
 
 1. Navigate to **Scans** in the sidebar.
