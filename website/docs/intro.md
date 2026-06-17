@@ -17,6 +17,42 @@ PQCScanner is an open-source tool that scans codebases for quantum-vulnerable cr
 - **Integrates with CI/CD** pipelines for automated quality gates
 - **Monitors at runtime** using eBPF probes and TLS network scanning
 
+## Tech Stack
+
+### Frontend
+
+| Tool | Purpose |
+| ---- | ------- |
+| React | Component-based SPA |
+| Vite | Build tool and dev server |
+| Carbon Design System | UI components (dark theme) |
+| Native `fetch` API | HTTP client |
+| React Hooks | State management |
+
+### Backend
+
+| Tool | Version | Purpose |
+| ---- | ------- | ------- |
+| FastAPI | 0.111.0 | REST API framework |
+| Uvicorn | 0.29.0 | ASGI server |
+| SQLAlchemy | 2.0.30 | ORM |
+| Pydantic | 2.7.1 | Data validation |
+| Celery | 5.4.0 | Async task queue |
+| Redis (Python) | 5.0.4 | Cache and message broker |
+| GitPython | 3.1.43 | Remote repo cloning |
+| Paramiko | 3.5.1 | SSH key parsing |
+| cryptography | latest | X.509 cert and PKCS#12 parsing |
+| Python | 3.12 | Runtime |
+
+### Infrastructure
+
+| Tool | Version | Purpose |
+| ---- | ------- | ------- |
+| PostgreSQL | 16-alpine | Primary database |
+| Redis | 7-alpine | Cache and Celery broker |
+| Ollama | latest | Local LLM for AI validation |
+| Docker + Docker Compose | latest | Container orchestration |
+
 ## Prerequisites
 
 - Docker and Docker Compose v2
