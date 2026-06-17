@@ -1,0 +1,39 @@
+/**
+ * PQCScanner -- Carbon-inspired dark theme
+ * Customizations applied on top of the Docusaurus classic theme.
+ */
+
+:root {
+  --ifm-color-primary: #0f62fe;
+  --ifm-color-primary-dark: #0050e6;
+  --ifm-color-primary-darker: #004bd3;
+  --ifm-color-primary-darkest: #003da5;
+  --ifm-color-primary-light: #4589ff;
+  --ifm-color-primary-lighter: #78a9ff;
+  --ifm-color-primary-lightest: #a6c8ff;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #78a9ff;
+  --ifm-color-primary-dark: #4589ff;
+  --ifm-color-primary-darker: #0f62fe;
+  --ifm-color-primary-darkest: #0043ce;
+  --ifm-color-primary-light: #a6c8ff;
+  --ifm-color-primary-lighter: #d0e2ff;
+  --ifm-color-primary-lightest: #edf5ff;
+  --ifm-background-color: #161616;
+  --ifm-background-surface-color: #262626;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.1);
+}
+
+.button--primary {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}
+
+.button--secondary {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}

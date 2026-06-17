@@ -1,0 +1,88 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pqc_user
+      POSTGRES_PASSWORD: pqc_pass
+      POSTGRES_DB: pqc_platform
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    env_file: ./backend/.env          # loads all tokens from .env file
+    environment:
+      DATABASE_URL: postgresql://pqc_user:pqc_pass@db:5432/pqc_platform
+      REDIS_URL: redis://redis:6379/0
+    depends_on: [db, redis]
+    volumes:
+      - ./backend:/app
+      # Optional: mount SSH key for private repo access via SSH
+      # - ~/.ssh/id_rsa:/run/secrets/id_rsa:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    ports: ["5173:5173"]
+    depends_on: [backend]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # ── Ollama — local LLM server for IBM Granite AI validation ────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: 24h
+    # GPU support (uncomment if NVIDIA GPU is available):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Pull IBM Granite model on first start (runs once, then exits)
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on: [ollama]
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Waiting for Ollama to be ready...';
+        sleep 10;
+        ollama pull granite-code:3b;
+        echo 'Model ready.'
+      "
+    restart: "no"
+
+  # ── Celery worker — processes async AI validation tasks ────────────────────
+  celery_worker:
+    build: ./backend
+    command: celery -A app.celery_app.celery worker --loglevel=info --concurrency=2 -Q ai_validation
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://pqc_user:pqc_pass@db:5432/pqc_platform
+      REDIS_URL: redis://redis:6379/0
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: granite-code:3b
+    depends_on: [db, redis, ollama]
+    volumes:
+      - ./backend:/app
+
+volumes:
+  pgdata:
+  ollama_data:
