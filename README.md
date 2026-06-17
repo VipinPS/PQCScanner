@@ -43,17 +43,19 @@ A comprehensive, production-grade platform for discovering quantum-vulnerable cr
 ## Tech Stack
 
 ### Frontend
+
 | Tool | Purpose |
-|---|---|
+| ---- | ------- |
 | React | Component-based SPA |
 | Vite | Build tool and dev server |
-| IBM Carbon Design System | UI components (dark theme) |
+| Carbon Design System | UI components (dark theme) |
 | Native `fetch` API | HTTP client (`src/api/client.js`) |
 | React Hooks | State management (`useState`, `useEffect`) |
 
 ### Backend
+
 | Tool | Version | Purpose |
-|---|---|---|
+| ---- | ------- | ------- |
 | FastAPI | 0.111.0 | REST API framework |
 | Uvicorn | 0.29.0 | ASGI server |
 | SQLAlchemy | 2.0.30 | ORM |
@@ -71,8 +73,9 @@ A comprehensive, production-grade platform for discovering quantum-vulnerable cr
 | Python | 3.12 | Runtime |
 
 ### Infrastructure
+
 | Tool | Version | Purpose |
-|---|---|---|
+| ---- | ------- | ------- |
 | PostgreSQL | 16-alpine | Primary database |
 | Redis | 7-alpine | Cache and Celery broker |
 | Docker + Docker Compose | latest | Container orchestration |
@@ -170,7 +173,7 @@ npm install && npm run dev
 ## Access URLs
 
 | Service | URL |
-|---|---|
+| ---- | ---- |
 | Frontend UI | `http://localhost:5173` |
 | Backend API | `http://localhost:8000` |
 | Swagger UI (interactive docs) | `http://localhost:8000/docs` |
@@ -237,7 +240,7 @@ Dedicated view for cryptographic material found in repositories:
 Crypto agility is the ability to **swap cryptographic algorithms without redesigning the application**. The platform scores each repository on a 5-level maturity scale:
 
 | Level | Label | Description |
-|---|---|---|
+| ---- | ---- | ---- |
 | **L1** | Hardcoded | Algorithm baked into code — e.g., `RSA.generate(1024)` or private key in source |
 | **L2** | Configurable | Algorithm set via config/env at deploy time — e.g., `CRYPTO_ALGO="RSA-2048"` |
 | **L3** | Hot-Swap | Registry/factory pattern — swappable at runtime without restart |
@@ -247,7 +250,7 @@ Crypto agility is the ability to **swap cryptographic algorithms without redesig
 ### Agility Signal Patterns
 
 | Pattern | Score | Level Signal |
-|---|---|---|
+| ---- | ---- | ---- |
 | `alg_negotiat` / `negotiateAlgorithm` | +4 | → L5 |
 | `HybridKEM` / `X25519MLKEM` / `hybrid.*pqc` | +3 | → L4 |
 | `ML-KEM` / `kyber` / `dilithium` / `ML-DSA` | +3 | → L4+ |
@@ -293,7 +296,7 @@ Python, Java, Go, TypeScript/JavaScript, Kotlin, Rust, C, C++, C#, Dart, Ruby, S
 ### Algorithms Detected
 
 | Algorithm | Type | Quantum Status | Risk | NIST Replacement |
-|---|---|---|---|---|
+| ---- | ---- | ---- | ---- | ---- |
 | MD5 | Hash | BROKEN | CRITICAL | SHA-3-256 |
 | SHA-1 | Hash | WEAK | HIGH | SHA-3-256 |
 | DES / 3DES | Symmetric | BROKEN | CRITICAL | AES-256-GCM |
@@ -333,7 +336,7 @@ Python, Java, Go, TypeScript/JavaScript, Kotlin, Rust, C, C++, C#, Dart, Ruby, S
 Detects actual cryptographic material embedded in repositories — not just API usage patterns.
 
 | Finding Type | Detection | Key Data Extracted |
-|---|---|---|
+| ---- | ---- | ---- |
 | **SSH_PRIVATE_KEY** | PEM headers | Algorithm, key size, curve |
 | **SSH_PUBLIC_KEY** | `.pub` / `authorized_keys` | Key type (rsa, ecdsa, ed25519) |
 | **TLS_CERT** | PEM cert blocks → X.509 parse | Subject, issuer, expiry, serial, sig hash |
@@ -344,7 +347,7 @@ Detects actual cryptographic material embedded in repositories — not just API 
 ### Risk Assessment
 
 | Key Type | Risk |
-|---|---|
+| ---- | ---- |
 | RSA ≤ 1024 bits | BROKEN / CRITICAL |
 | RSA 2048+ bits | VULNERABLE / CRITICAL |
 | ECDSA P-256/384 | VULNERABLE / HIGH |
@@ -368,7 +371,7 @@ Detects actual cryptographic material embedded in repositories — not just API 
 ### Priority Ordering
 
 | Priority | Quantum Status | Risk Score |
-|---|---|---|
+| ---- | ---- | ---- |
 | 1 (highest) | BROKEN | 10.0 |
 | 2 | VULNERABLE | 8.5 |
 | 3 | WEAK | 6.0 |
@@ -420,7 +423,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### Authentication
 
 | Method | Endpoint | Description | Auth |
-|---|---|---|---|
+| ---- | ---- | ---- | ---- |
 | POST | `/api/auth/login` | Login (returns httpOnly session cookie) | None |
 | POST | `/api/auth/logout` | Clear session | Session |
 | GET | `/api/auth/me` | Current user and role | Session |
@@ -428,7 +431,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### Repositories
 
 | Method | Endpoint | Description | Role |
-|---|---|---|---|
+| ---- | ---- | ---- | ---- |
 | GET | `/api/repos/` | List all repositories | Public |
 | POST | `/api/repos/` | Add repository (Git URL) | Admin |
 | GET | `/api/repos/{repo_id}` | Get repo details + agility scores | Public |
@@ -437,7 +440,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### Scans
 
 | Method | Endpoint | Description |
-|---|---|---|
+| ---- | ---- | ---- |
 | POST | `/api/scans/{repo_id}/trigger` | Trigger async scan |
 | GET | `/api/scans/{repo_id}/runs` | Scan history |
 | GET | `/api/scans/runs/{scan_run_id}` | Poll scan status (`pending/running/complete/failed`) |
@@ -445,7 +448,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### Findings
 
 | Method | Endpoint | Description |
-|---|---|---|
+| ---- | ---- | ---- |
 | GET | `/api/findings/` | Query findings (filter: repo, risk, algorithm, status) |
 | GET | `/api/findings/summary` | Aggregated counts by risk and status |
 | PATCH | `/api/findings/{id}/status` | Resolve finding, set `migrated_to` |
@@ -458,7 +461,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### CBOM & Reports
 
 | Method | Endpoint | Description |
-|---|---|---|
+| ---- | ---- | ---- |
 | GET | `/api/cbom/` | CBOM entries (priority ordered) |
 | GET | `/api/cbom/export/cyclonedx` | Export as CycloneDX 1.5 JSON |
 | GET | `/api/cbom/export/csv` | Export as CSV |
@@ -470,7 +473,7 @@ Interactive docs available at `http://localhost:8000/docs`
 ### Playbooks
 
 | Method | Endpoint | Description |
-|---|---|---|
+| ---- | ---- | ---- |
 | GET | `/api/playbooks/` | List all available playbooks |
 | GET | `/api/playbooks/{algorithm}` | Full playbook for an algorithm |
 | GET | `/api/playbooks/{algorithm}/{language}` | Language-specific code example |
@@ -482,7 +485,7 @@ Interactive docs available at `http://localhost:8000/docs`
 Session-based auth via httpOnly cookie (`pqc_session`, 8-hour TTL).
 
 | Role | Capabilities |
-|---|---|
+| ---- | ---- |
 | **admin** | Full access — add/delete repos, trigger scans, manage all data |
 | **dev** | Trigger scans, resolve findings, view everything |
 | **reader** | Read-only — view findings, CBOM, playbooks, reports |
@@ -490,7 +493,7 @@ Session-based auth via httpOnly cookie (`pqc_session`, 8-hour TTL).
 **Default credentials (development only):**
 
 | Username | Password | Role |
-|---|---|---|
+| ---- | ---- | ---- |
 | `admin` | `pqcadmin` | Admin |
 | `dev` | `pqcdev` | Dev |
 | `reader` | `pqcreader` | Reader |
@@ -504,7 +507,7 @@ Session-based auth via httpOnly cookie (`pqc_session`, 8-hour TTL).
 ### Core Tables
 
 | Table | Purpose |
-|---|---|
+| ---- | ---- |
 | `repos` | Repository registry + agility scores (level, label, score, hybrid flag, signals) |
 | `scan_runs` | Scan execution history (status, file counts, finding counts, errors) |
 | `findings` | Code-level crypto detections with full migration lifecycle |
@@ -588,7 +591,7 @@ GITHUB_TOKEN   = (auto-provided by GitHub Actions)
 ## NIST PQC Standards (2024)
 
 | Standard | Algorithm | Replaces |
-|---|---|---|
+| ---- | ---- | ---- |
 | **FIPS 203** | ML-KEM (Kyber) | RSA/ECDH key exchange |
 | **FIPS 204** | ML-DSA (Dilithium) | RSA-sign/ECDSA signatures |
 | **FIPS 205** | SLH-DSA (SPHINCS+) | Stateless hash-based signatures |
@@ -621,7 +624,7 @@ SCAN_WORKERS=4
 ### Docker Compose Services
 
 | Service | Image | Port |
-|---|---|---|
+| ---- | ---- | ---- |
 | PostgreSQL | postgres:16-alpine | 5432 |
 | Redis | redis:7-alpine | 6379 |
 | Backend (FastAPI) | python:3.12 | 8000 |
