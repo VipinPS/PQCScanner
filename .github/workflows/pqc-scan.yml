@@ -1,0 +1,168 @@
+name: PQC Cryptography Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 2 * * 1"   # Weekly Monday 2am
+
+jobs:
+  # ── Job 1: Scan the repo itself ───────────────────────────────────────────
+  pqc-scan:
+    name: Scan for Crypto Vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PQC Scanner
+        run: |
+          pip install pqc-scanner gitpython
+
+      - name: Run crypto discovery scan
+        id: scan
+        run: |
+          python - << 'PYEOF'
+          import sys, json, os, re
+          from pathlib import Path
+
+          PATTERNS = {
+            "MD5":       (["CRITICAL", "BROKEN"],   [r"\bMD5\b", r"hashlib\.md5", r"md5\("]),
+            "SHA-1":     (["HIGH",     "WEAK"],      [r"\bSHA[-_]?1\b", r"hashlib\.sha1"]),
+            "DES/3DES":  (["CRITICAL", "BROKEN"],   [r"\bDES\b", r"\b3DES\b", r"DESede"]),
+            "RSA-1024":  (["CRITICAL", "BROKEN"],   [r"RSA\.generate\(1024", r"generateKeyPair.*1024"]),
+            "RSA-2048":  (["CRITICAL", "VULNERABLE"],[r"RSA\.generate\(2048", r"KeyPairGenerator.*2048"]),
+            "ECDSA":     (["HIGH",     "VULNERABLE"],[r"\bECDSA\b", r"ec\.generate_private_key"]),
+            "TLS-1.0":   (["CRITICAL", "BROKEN"],   [r"TLSv1\b(?!\.)", r"ssl\.PROTOCOL_TLSv1\b"]),
+            "TLS-1.1":   (["HIGH",     "WEAK"],      [r"TLSv1\.1", r"ssl\.PROTOCOL_TLSv1_1"]),
+            "RC4":       (["CRITICAL", "BROKEN"],   [r"\bRC4\b", r"\bARCFOUR\b"]),
+          }
+
+          SKIP = {".git","node_modules","__pycache__",".venv","dist","build","vendor"}
+          EXTS = {".py",".java",".go",".ts",".js",".kt",".rs",".cpp",".cs",".rb"}
+
+          findings = []
+          critical_count = 0
+
+          for dirpath, dirnames, filenames in os.walk("."):
+            dirnames[:] = [d for d in dirnames if d not in SKIP]
+            for fname in filenames:
+              if Path(fname).suffix.lower() not in EXTS:
+                continue
+              fpath = os.path.join(dirpath, fname)
+              try:
+                content = open(fpath, encoding="utf-8", errors="ignore").read()
+                lines   = content.splitlines()
+              except:
+                continue
+              for algo, (risk_qs, pats) in PATTERNS.items():
+                risk, qs = risk_qs
+                for pat in pats:
+                  for m in re.finditer(pat, content, re.IGNORECASE):
+                    ln = content[:m.start()].count("\n") + 1
+                    findings.append({"file": fpath, "line": ln, "algo": algo,
+                                     "risk": risk, "quantum_status": qs})
+                    if risk == "CRITICAL":
+                      critical_count += 1
+                    break
+
+          print(f"::notice::PQC Scan complete: {len(findings)} findings, {critical_count} critical")
+
+          if findings:
+            print(f"\n{'='*60}")
+            print(f"PQC SCAN RESULTS: {len(findings)} cryptographic issues found")
+            print(f"{'='*60}")
+            for f in findings[:20]:
+              icon = "🔴" if f["risk"] == "CRITICAL" else "🟡"
+              print(f"{icon} [{f['risk']}] {f['algo']} in {f['file']}:{f['line']}")
+
+          with open("pqc-findings.json", "w") as out:
+            json.dump({"total": len(findings), "critical": critical_count, "findings": findings}, out, indent=2)
+
+          # Fail on new critical findings in PRs
+          if critical_count > 0 and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+            print(f"\n::error::PR introduces or contains {critical_count} CRITICAL crypto vulnerabilities. Review required.")
+            sys.exit(1)
+          PYEOF
+
+      - name: Upload findings artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pqc-findings
+          path: pqc-findings.json
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '## 🔐 PQC Cryptography Scan\n\n';
+            try {
+              const data = JSON.parse(fs.readFileSync('pqc-findings.json', 'utf8'));
+              if (data.total === 0) {
+                report += '✅ **No cryptographic issues found**\n';
+              } else {
+                report += `| Metric | Count |\n|--------|-------|\n`;
+                report += `| Total findings | ${data.total} |\n`;
+                report += `| Critical | ${data.critical} |\n\n`;
+                if (data.findings.length > 0) {
+                  report += '### Top Findings\n\n| Risk | Algorithm | File | Line |\n|------|-----------|------|------|\n';
+                  data.findings.slice(0, 10).forEach(f => {
+                    const icon = f.risk === 'CRITICAL' ? '🔴' : '🟡';
+                    report += `| ${icon} ${f.risk} | ${f.algo} | \`${f.file}\` | ${f.line} |\n`;
+                  });
+                }
+                report += '\n\n> 💡 See [PQC Migration Guide](https://csrc.nist.gov/projects/post-quantum-cryptography) for remediation';
+              }
+            } catch(e) {
+              report += '⚠️ Could not parse scan results\n';
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  # ── Job 2: Register with PQCScanner ────────────────────────────────────
+  update-cbom:
+    name: Update CBOM in PQCScanner
+    runs-on: ubuntu-latest
+    needs: pqc-scan
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download findings
+        uses: actions/download-artifact@v4
+        with:
+          name: pqc-findings
+
+      - name: Push to PQCScanner API
+        env:
+          PQC_API_URL: ${{ secrets.PQC_API_URL }}
+          PQC_API_TOKEN: ${{ secrets.PQC_API_TOKEN }}
+        run: |
+          if [ -z "$PQC_API_URL" ]; then
+            echo "PQC_API_URL not configured, skipping PQCScanner update"
+            exit 0
+          fi
+          curl -sf -X POST "$PQC_API_URL/api/scans/ci-ingest" \
+            -H "Authorization: Bearer $PQC_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @pqc-findings.json && echo "CBOM updated" || echo "PQCScanner update failed (non-blocking)"
